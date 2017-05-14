@@ -1,0 +1,28 @@
+[package]
+name = "ctftimebot"
+version = "0.1.0"
+authors = ["Jonas Bushart <jonas@bushart.org>"]
+
+[[bin]]
+name = "main"
+doc = false
+
+[dependencies]
+slack-hook = {version="0.3", path="../rust-slack"}
+reqwest = "*"
+xml-rs = "*"
+chrono = "0.3"
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+# envy = "0.2"
+dotenv = "*"
+lazy_static = "0.2"
+
+[dependencies.derive_builder]
+version = "0.4"
+features = ["private_fields"]
+
+[profile.release]
+lto = true
+panic = "abort"
