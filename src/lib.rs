@@ -130,7 +130,7 @@ impl CtfEvent {
 [{url:}]({url:})
 
 "#,
-                               self.start_date.with_timezone(&Local).naive_local(),
+                               self.start_date.with_timezone(&Local).format("%A, %F %R"),
                                duration,
                                organizers,
                                url = url);
