@@ -4,24 +4,25 @@ version = "0.1.0"
 authors = ["Jonas Bushart <jonas@bushart.org>"]
 
 [[bin]]
-name = "main"
+name = "ctftimebot"
 doc = false
 
 [dependencies]
-slack-hook = {version="0.3", path="../rust-slack"}
-reqwest = "*"
-xml-rs = "*"
 chrono = "0.3"
+derive_builder = { version = "0.4", features = ["private_fields"]}
+dotenv = "0.10"
+envy = "0.3"
+lazy_static = "0.2"
+reqwest = "0.6"
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
-# envy = "0.2"
-dotenv = "*"
-lazy_static = "0.2"
+slack-hook = "0.4"
+xml-rs = "0.4"
 
-[dependencies.derive_builder]
-version = "0.4"
-features = ["private_fields"]
+# [dependencies.derive_builder]
+# version = "0.4"
+# features = ["private_fields"]
 
 [profile.release]
 lto = true

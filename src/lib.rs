@@ -1,24 +1,23 @@
 extern crate chrono;
 #[macro_use]
 extern crate derive_builder;
-extern crate xml;
+extern crate dotenv;
+extern crate envy;
+#[macro_use]
+extern crate lazy_static;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
 extern crate slack_hook;
-extern crate dotenv;
-// extern crate envy;
-#[macro_use]
-extern crate lazy_static;
+extern crate xml;
 
-use std::env;
+use std::io::prelude::*;
 use std::str::FromStr;
 use chrono::prelude::*;
 use chrono::Duration;
-use std::io::prelude::*;
-use xml::reader::{EventReader, XmlEvent};
 use slack_hook::{Attachment, AttachmentBuilder};
+use xml::reader::{EventReader, XmlEvent};
 
 const BASE_URL: &str = "https://ctftime.org";
 
@@ -33,20 +32,9 @@ pub struct Config {
 }
 
 lazy_static! {
-    // static ref CONFIG: Config = {
-    //     dotenv::dotenv().expect("Failed to read .env file");
-    //     envy::from_env::<Config>().expect("Couldn't read config")
-    // };
     pub static ref CONFIG: Config = {
         dotenv::dotenv().expect("Failed to read .env file");
-        Config {
-            webhook_url: env::var("WEBHOOK_URL").expect("You need to define the WEBHOOK_URL environment variable."),
-            days_into_future: env::var("DAYS_INTO_FUTURE").unwrap_or_else(|_| "21".into()).parse::<i64>().expect("Cannot parse the DAYS_INTO_FUTURE environment variable."),
-            color_jeopardy: env::var("COLOR_JEOPARDY").unwrap_or_else(|_| "#0099e1".into()),
-            color_attack_defense: env::var("COLOR_ATTACK_DEFENSE").unwrap_or_else(|_| "#da5422".into()),
-            bot_icon: env::var("BOT_ICON").ok(),
-            always_show_ctfs: env::var("ALWAYS_SHOW_CTFS").and_then(|x| Ok(x.split(',').map(|x| x.parse::<usize>().unwrap_or(0)).collect::<Vec<_>>())).unwrap_or_else(|_| Vec::new())
-        }
+        envy::from_env::<Config>().expect("Couldn't read config")
     };
 }
 
