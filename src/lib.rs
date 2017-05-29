@@ -183,6 +183,9 @@ impl CtfEvent {
 pub enum CtfRestrictions {
     Open,
     Prequalified,
+    Academic,
+    Invited,
+    HighSchool,
 }
 
 impl FromStr for CtfRestrictions {
@@ -191,7 +194,10 @@ impl FromStr for CtfRestrictions {
         match s {
             "Open" => Ok(CtfRestrictions::Open),
             "Prequalified" => Ok(CtfRestrictions::Prequalified),
-            _ => Err("Unknown Restrictions".into()),
+            "High-school" => Ok(CtfRestrictions::HighSchool),
+            "Academic" => Ok(CtfRestrictions::Academic),
+            "Invited" => Ok(CtfRestrictions::Invited),
+            _ => Err(format!("Unknown Restrictions: {}", s)),
         }
     }
 }
