@@ -174,8 +174,11 @@ impl CtfEvent {
             return true;
         }
 
+        if self.restrictions != CtfRestrictions::Open && self.restrictions != CtfRestrictions::Academic {
+            return false;
+        }
         let days_into_future = (self.start_date.signed_duration_since(UTC::now().with_timezone(&UTC.fix()))).num_days();
-        self.restrictions == CtfRestrictions::Open && !self.onsite && days_into_future <= CONFIG.days_into_future
+        !self.onsite && days_into_future <= CONFIG.days_into_future
     }
 }
 
