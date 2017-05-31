@@ -11,7 +11,7 @@ doc = false
 chrono = "0.3"
 derive_builder = { version = "0.4", features = ["private_fields"]}
 dotenv = "0.10"
-envy = "0.3"
+envy = "0.3.1"
 lazy_static = "0.2"
 reqwest = "0.6"
 serde = "1.0"
