@@ -1,6 +1,6 @@
-extern crate slack_hook;
-extern crate reqwest;
 extern crate ctftimebot;
+extern crate reqwest;
+extern crate slack_hook;
 
 use ctftimebot::{CONFIG, parse_ctftime_feed};
 use slack_hook::{Slack, PayloadBuilder};
