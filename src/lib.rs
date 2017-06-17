@@ -251,7 +251,7 @@ fn deserialize_string_empty_as_none<'de, D>(deserializer: D) -> Result<Option<St
 
         fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
             formatter.write_str("any string")
-            }
+        }
 
         fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
             where E: serde::de::Error
@@ -260,7 +260,7 @@ fn deserialize_string_empty_as_none<'de, D>(deserializer: D) -> Result<Option<St
                 "" => Ok(None),
                 _ => Ok(Some(value.to_string()))
             }
-            }
+        }
 
         fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
             where E: serde::de::Error
@@ -276,9 +276,33 @@ fn deserialize_string_empty_as_none<'de, D>(deserializer: D) -> Result<Option<St
             where E: serde::de::Error
         {
             Ok(None)
+        }
     }
-}
 
     deserializer.deserialize_string(OptionStringEmptyNone)
-    }
+}
+
+#[test]
+fn test_deserialize_ctf_event() {
+    use std::fs::File;
+    let json = File::open("./tests/ctfs.json").unwrap();
+
+    let res: Vec<CtfEvent> = serde_json::from_reader(json).unwrap();
+    assert_eq!(res.len(), 442);
+
+    let event = res.iter().last().unwrap();
+    assert_eq!(event.onsite, true);
+    assert_eq!(event.weight, 0.0);
+    assert_eq!(event.title, "GreHack CTF 2017");
+    assert_eq!(event.url, Some("https://www.grehack.fr/".to_string()));
+    assert_eq!(event.restrictions, CtfRestrictions::Open);
+    assert_eq!(event.format, CtfFormat::Jeopardy);
+    assert_eq!(event.participants, 20);
+    assert_eq!(event.ctftime_url, "https://ctftime.org/event/426/");
+    assert_eq!(event.location, Some("Grenoble, France".to_string()));
+    assert_eq!(event.live_feed, None);
+    assert_eq!(event.public_votable, false);
+    assert_eq!(event.logo_url, Some("https://ctftime.org/media/events/2016_ctftime.png".to_string()));
+    assert_eq!(event.id, 426);
+    assert_eq!(event.ctf_id, 42);
 }
