@@ -27,6 +27,9 @@ fn main() {
                          .filter(|x| x.should_print_event())
                          .map(|x| x.to_slack())
                          .collect::<Vec<_>>());
+    if let Some(ref c) = CONFIG.mattermost_channel {
+        p = p.channel(c.to_string());
+    }
 
     if let Some(ref url) = CONFIG.bot_icon {
         p = p.icon_url(url.as_ref())

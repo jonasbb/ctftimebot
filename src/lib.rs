@@ -23,6 +23,7 @@ pub struct Config {
     pub color_attack_defense: String,
     pub bot_icon: Option<String>,
     pub always_show_ctfs: Vec<usize>,
+    pub mattermost_channel: Option<String>,
 }
 
 lazy_static! {
