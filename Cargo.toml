@@ -8,8 +8,7 @@ name = "ctftimebot"
 doc = false
 
 [dependencies]
-chrono = "0.3"
-derive_builder = { version = "0.4", features = ["private_fields"]}
+chrono = { version = "0.3", features = ["serde"] }
 dotenv = "0.10"
 envy = "0.3.1"
 lazy_static = "0.2"
@@ -18,7 +17,6 @@ serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
 slack-hook = "0.4"
-xml-rs = "0.4"
 
 # [dependencies.derive_builder]
 # version = "0.4"

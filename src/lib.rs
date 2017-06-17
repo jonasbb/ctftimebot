@@ -1,6 +1,4 @@
 extern crate chrono;
-#[macro_use]
-extern crate derive_builder;
 extern crate dotenv;
 extern crate envy;
 #[macro_use]
@@ -10,14 +8,10 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate slack_hook;
-extern crate xml;
 
-use std::io::prelude::*;
-use std::str::FromStr;
 use chrono::prelude::*;
 use chrono::Duration;
 use slack_hook::{Attachment, AttachmentBuilder};
-use xml::reader::{EventReader, XmlEvent};
 
 const BASE_URL: &str = "https://ctftime.org";
 
@@ -39,23 +33,25 @@ lazy_static! {
 }
 
 
-#[derive(Builder,Debug)]
+#[derive(Debug,Deserialize)]
 pub struct CtfEvent {
     /// Event title, this is specific to one event, e.g. "FAUST CTF 2017"
     title: String,
     /// Link to CTF time page of event
-    link: String,
-    /// GUID, contains same value as link
-    guid: String,
+    ctftime_url: String,
+    /// Event id
+    id: usize,
     /// Start time
+    #[serde(rename = "start")]
     start_date: DateTime<FixedOffset>,
     /// End time
+    #[serde(rename = "finish")]
     finish_date: DateTime<FixedOffset>,
     /// URL of logo
-    #[builder(default="None")]
+    #[serde(rename = "logo", deserialize_with = "deserialize_string_empty_as_none")]
     logo_url: Option<String>,
     /// Link to the event page
-    #[builder(default="None")]
+    #[serde(deserialize_with = "deserialize_string_empty_as_none")]
     url: Option<String>,
     /// format style of CTF, most common Jeopardy or AttackDefense
     format: CtfFormat,
@@ -64,12 +60,12 @@ pub struct CtfEvent {
     /// The weight of the event
     weight: f32,
     /// A link to the live feed of the event
-    #[builder(default="None")]
+    #[serde(deserialize_with = "deserialize_string_empty_as_none")]
     live_feed: Option<String>,
     /// Access restrictions for this event
     restrictions: CtfRestrictions,
     /// Location of an onsite CTF. Should be set if `onsite` is true.
-    #[builder(default="None")]
+    #[serde(deserialize_with = "deserialize_string_empty_as_none")]
     location: Option<String>,
     /// Specifies that the event is at a specific location, `location` should be set in this case
     onsite: bool,
@@ -77,8 +73,8 @@ pub struct CtfEvent {
     organizers: Vec<CtfTeam>,
     /// ID of the general event
     ctf_id: usize,
-    /// Name of the general event, e.g. "FAUST CTF"
-    ctf_name: String,
+    /// Number of teams who want to participate
+    participants: usize,
 }
 
 fn format_duration(d: &Duration) -> String {
@@ -111,7 +107,7 @@ impl CtfEvent {
                               .map(|x| x.to_string())
                               .collect::<Vec<_>>())
                 .join(", ");
-        let url = self.url.clone().unwrap_or_else(|| self.link.clone());
+        let url = self.url.clone().unwrap_or_else(|| self.ctftime_url.clone());
 
         let mut text = format!(r#"**Date:** {} for {}
 **Organizers:** {}
@@ -170,27 +166,14 @@ impl CtfEvent {
     }
 }
 
-#[derive(Clone,Copy,Debug,Eq,PartialEq)]
+#[derive(Clone,Copy,Debug,Deserialize,Eq,PartialEq)]
 pub enum CtfRestrictions {
     Open,
     Prequalified,
     Academic,
     Invited,
+    #[serde(rename = "High-school")]
     HighSchool,
-}
-
-impl FromStr for CtfRestrictions {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Open" => Ok(CtfRestrictions::Open),
-            "Prequalified" => Ok(CtfRestrictions::Prequalified),
-            "High-school" => Ok(CtfRestrictions::HighSchool),
-            "Academic" => Ok(CtfRestrictions::Academic),
-            "Invited" => Ok(CtfRestrictions::Invited),
-            _ => Err(format!("Unknown Restrictions: {}", s)),
-        }
-    }
 }
 
 /// What type of CTF, e.g. `AttackDefense`
@@ -202,6 +185,38 @@ pub enum CtfFormat {
     Unknown,
 }
 
+impl<'de> serde::de::Deserialize<'de> for CtfFormat {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: serde::Deserializer<'de>
+    {
+    use serde::de::*;
+    struct CtfFormatVisitor;
+
+    impl<'de> serde::de::Visitor<'de> for CtfFormatVisitor {
+        type Value = CtfFormat;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("one of `Jeopardy`, `Attack-Defense`, `Hack quest`, ``")
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where E: serde::de::Error
+        {
+            use CtfFormat::*;
+            match value {
+                "Jeopardy" => Ok(Jeopardy),
+                "Attack-Defense" => Ok(AttackDefense),
+                "Hack quest" => Ok(HackQuest),
+                "" => Ok(Unknown),
+                _ => Err(Error::invalid_value(Unexpected::Str(value), &self))
+            }
+        }
+    }
+
+    deserializer.deserialize_str(CtfFormatVisitor)
+    }
+}
+
 impl CtfFormat {
     fn to_string(&self) -> &str {
         match *self {
@@ -209,17 +224,6 @@ impl CtfFormat {
             CtfFormat::AttackDefense => "Attack-Defense",
             CtfFormat::HackQuest => "Hack-Quest",
             CtfFormat::Unknown => "Unknown",
-        }
-    }
-}
-
-impl From<isize> for CtfFormat {
-    fn from(value: isize) -> Self {
-        match value {
-            1 => CtfFormat::Jeopardy,
-            2 => CtfFormat::AttackDefense,
-            3 => CtfFormat::HackQuest,
-            _ => CtfFormat::Unknown,
         }
     }
 }
@@ -237,114 +241,44 @@ impl CtfTeam {
     }
 }
 
-/// Parse the ctftime RSS feed for the special `CtfEvent` related
-/// fields and construct and array of `CtfEvent` instances.
-pub fn parse_ctftime_feed<R: Read>(reader: R) -> Vec<CtfEvent> {
-    let mut parser = EventReader::new(reader);
+/// Deserialize a `Option<String>` type while transforming the empty string to `None`
+fn deserialize_string_empty_as_none<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+    where D: serde::de::Deserializer<'de>
+{
+    struct OptionStringEmptyNone;
+    impl<'de> serde::de::Visitor<'de> for OptionStringEmptyNone {
+        type Value = Option<String>;
 
-    let mut result = Vec::new();
-    let mut in_item = false;
-    let mut builder = CtfEventBuilder::default();
-    let mut data: Option<String> = None;
-    loop {
-        match parser.next() {
-            Ok(XmlEvent::StartElement { name, .. }) => {
-                if name.local_name == "item" {
-                    in_item = true;
-                };
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("any string")
             }
-            Ok(XmlEvent::EndElement { name }) => {
-                match &*name.local_name {
-                    "item" => {
-                        in_item = false;
-                        // finalize CtfEvent
-                        result.push(builder.build().unwrap());
-                        builder = CtfEventBuilder::default();
-                    }
 
-                    // Elements of a CtfEvent
-                    "title" if data.is_some() => {
-                        builder.title(data.unwrap());
-                    }
-                    "link" if data.is_some() => {
-                        builder.link(data.unwrap());
-                    }
-                    "guid" if data.is_some() => {
-                        builder.guid(data.unwrap());
-                    }
-                    "start_date" if data.is_some() => {
-                        builder.start_date(DateTime::parse_from_str(&(data.unwrap() + "+0000"),
-                                                                    "%Y%m%dT%H%M%S%z")
-                                                   .unwrap());
-                    }
-                    "finish_date" if data.is_some() => {
-                        builder.finish_date(DateTime::parse_from_str(&(data.unwrap() + "+0000"),
-                                                                     "%Y%m%dT%H%M%S%z")
-                                                    .unwrap());
-                    }
-                    "logo_url" if data.is_some() => {
-                        builder.logo_url(Some(BASE_URL.to_string() + &data.unwrap()));
-                    }
-                    "url" if data.is_some() => {
-                        builder.url(Some(data.unwrap()));
-                    }
-                    "format" if data.is_some() => {
-                        builder.format(data.unwrap().parse::<isize>().unwrap().into());
-                    }
-                    "public_votable" if data.is_some() => {
-                        builder.public_votable(parse_bool(data.unwrap()));
-                    }
-                    "weight" if data.is_some() => {
-                        builder.weight(data.unwrap().parse::<f32>().unwrap());
-                    }
-                    "live_feed" if data.is_some() => {
-                        builder.live_feed(Some(data.unwrap()));
-                    }
-                    "restrictions" if data.is_some() => {
-                        builder.restrictions(CtfRestrictions::from_str(&data.unwrap()).unwrap());
-                    }
-                    "location" if data.is_some() => {
-                        builder.location(Some(data.unwrap()));
-                    }
-                    "onsite" if data.is_some() => {
-                        builder.onsite(parse_bool(data.unwrap()));
-                    }
-                    "organizers" if data.is_some() => {
-                        builder.organizers(serde_json::from_str(&data.unwrap()).unwrap());
-                    }
-                    "ctf_id" if data.is_some() => {
-                        builder.ctf_id(data.unwrap().parse::<usize>().unwrap());
-                    }
-                    "ctf_name" if data.is_some() => {
-                        builder.ctf_name(data.unwrap());
-                    }
-                    _ => {}
-                };
-                // remove old data
-                data = None;
+        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where E: serde::de::Error
+        {
+            match value {
+                "" => Ok(None),
+                _ => Ok(Some(value.to_string()))
             }
-            Ok(XmlEvent::Characters(d)) => {
-                if in_item {
-                    data = Some(d);
-                }
             }
-            Err(e) => {
-                println!("Error: {}", e);
-                break;
+
+        fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+            where E: serde::de::Error
+        {
+            match &*value {
+                "" => Ok(None),
+                _ => Ok(Some(value))
             }
-            Ok(XmlEvent::EndDocument) => {
-                break;
-            }
-            _ => {}
         }
+
+        // handles the `null` case
+        fn visit_unit<E>(self) -> Result<Self::Value, E>
+            where E: serde::de::Error
+        {
+            Ok(None)
     }
-    result
 }
 
-/// Parse a string into a bool value.
-fn parse_bool<T: AsRef<str>>(value: T) -> bool {
-    match value.as_ref() {
-        "false" | "False" => false,
-        "true" | "True" | _ => true,
+    deserializer.deserialize_string(OptionStringEmptyNone)
     }
 }
