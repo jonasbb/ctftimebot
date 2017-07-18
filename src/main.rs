@@ -16,17 +16,21 @@ fn main() {
     let mut resp = reqwest::get(&url).unwrap();
     let mut data = String::new();
     resp.read_to_string(&mut data).unwrap();
-    let event: Vec<CtfEvent> = serde_json::from_str(&data).unwrap();
+    let events: Vec<CtfEvent> = serde_json::from_str(&data).unwrap();
+    let events: Vec<_> = events.into_iter()
+        .filter(|x| x.should_print_event())
+        .map(|x| x.to_slack())
+        .collect();
+    if events.len() == 0 {
+        // early exit in case there is no upcoming CTF
+        return;
+    }
 
     let slack = Slack::new(CONFIG.webhook_url.as_ref()).unwrap();
     let mut p = PayloadBuilder::new()
         .username("Upcoming CTFs")
         .text("[Upcoming CTFs](https://ctftime.org/event/oldlist/upcoming)")
-        .attachments(event
-                         .into_iter()
-                         .filter(|x| x.should_print_event())
-                         .map(|x| x.to_slack())
-                         .collect::<Vec<_>>());
+        .attachments(events);
     if let Some(ref c) = CONFIG.mattermost_channel {
         p = p.channel(c.to_string());
     }
