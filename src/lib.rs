@@ -9,13 +9,12 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate slack_hook;
 
-use chrono::prelude::*;
-use chrono::Duration;
+use chrono::{DateTime, Duration, FixedOffset, Local, Offset, UTC};
 use slack_hook::{Attachment, AttachmentBuilder};
 
 const BASE_URL: &str = "https://ctftime.org";
 
-#[derive(Deserialize,Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Config {
     pub webhook_url: String,
     pub days_into_future: i64,
@@ -33,8 +32,7 @@ lazy_static! {
     };
 }
 
-
-#[derive(Debug,Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct CtfEvent {
     /// Event title, this is specific to one event, e.g. "FAUST CTF 2017"
     title: String,
@@ -104,21 +102,23 @@ impl CtfEvent {
         let duration = format_duration(&self.finish_date.signed_duration_since(self.start_date));
         let title = format!("{} — {}", self.title, self.format.to_string());
         let organizers = ((&self.organizers)
-                              .into_iter()
-                              .map(|x| x.to_string())
-                              .collect::<Vec<_>>())
-                .join(", ");
+            .into_iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<_>>())
+            .join(", ");
         let url = self.url.clone().unwrap_or_else(|| self.ctftime_url.clone());
 
-        let mut text = format!(r#"**Date:** {} for {}
+        let mut text = format!(
+            r#"**Date:** {} for {}
 **Organizers:** {}
 [{url:}]({url:})
 
 "#,
-                               self.start_date.with_timezone(&Local).format("%A, %F %R"),
-                               duration,
-                               organizers,
-                               url = url);
+            self.start_date.with_timezone(&Local).format("%A, %F %R"),
+            duration,
+            organizers,
+            url = url
+        );
 
         if self.onsite {
             if let Some(ref location) = self.location {
@@ -129,20 +129,22 @@ impl CtfEvent {
             text += "Prequalified teams only\n"
         }
 
-        let fallback = format!("{}\nDate: {} for {}\n{}",
-                               title,
-                               self.start_date.with_timezone(&Local).naive_local(),
-                               duration,
-                               url);
+        let fallback = format!(
+            "{}\nDate: {} for {}\n{}",
+            title,
+            self.start_date.with_timezone(&Local).naive_local(),
+            duration,
+            url
+        );
 
         let mut builder = AttachmentBuilder::new(fallback)
             .title(title)
             .text(text.trim().to_string())
             .color(if self.format == CtfFormat::AttackDefense {
-                        CONFIG.color_attack_defense.clone()
-                   } else {
-                        CONFIG.color_jeopardy.clone()
-                   });
+                CONFIG.color_attack_defense.clone()
+            } else {
+                CONFIG.color_jeopardy.clone()
+            });
 
         if let Some(ref url) = self.logo_url {
             builder = builder.thumb_url(url.as_ref());
@@ -159,26 +161,29 @@ impl CtfEvent {
             return true;
         }
 
-        if self.restrictions != CtfRestrictions::Open && self.restrictions != CtfRestrictions::Academic {
+        if self.restrictions != CtfRestrictions::Open
+            && self.restrictions != CtfRestrictions::Academic
+        {
             return false;
         }
-        let days_into_future = (self.start_date.signed_duration_since(UTC::now().with_timezone(&UTC.fix()))).num_days();
+        let days_into_future = (self.start_date
+            .signed_duration_since(UTC::now().with_timezone(&UTC.fix())))
+            .num_days();
         !self.onsite && days_into_future <= CONFIG.days_into_future
     }
 }
 
-#[derive(Clone,Copy,Debug,Deserialize,Eq,PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
 pub enum CtfRestrictions {
     Open,
     Prequalified,
     Academic,
     Invited,
-    #[serde(rename = "High-school")]
-    HighSchool,
+    #[serde(rename = "High-school")] HighSchool,
 }
 
 /// What type of CTF, e.g. `AttackDefense`
-#[derive(Clone,Copy,Debug,Eq,PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CtfFormat {
     Jeopardy,
     AttackDefense,
@@ -188,33 +193,35 @@ pub enum CtfFormat {
 
 impl<'de> serde::de::Deserialize<'de> for CtfFormat {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: serde::Deserializer<'de>
+    where
+        D: serde::Deserializer<'de>,
     {
-    use serde::de::*;
-    struct CtfFormatVisitor;
+        use serde::de::*;
+        struct CtfFormatVisitor;
 
-    impl<'de> serde::de::Visitor<'de> for CtfFormatVisitor {
-        type Value = CtfFormat;
+        impl<'de> serde::de::Visitor<'de> for CtfFormatVisitor {
+            type Value = CtfFormat;
 
-        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-            formatter.write_str("one of `Jeopardy`, `Attack-Defense`, `Hack quest`, ``")
-        }
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("one of `Jeopardy`, `Attack-Defense`, `Hack quest`, ``")
+            }
 
-        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where E: serde::de::Error
-        {
-            use CtfFormat::*;
-            match value {
-                "Jeopardy" => Ok(Jeopardy),
-                "Attack-Defense" => Ok(AttackDefense),
-                "Hack quest" => Ok(HackQuest),
-                "" => Ok(Unknown),
-                _ => Err(Error::invalid_value(Unexpected::Str(value), &self))
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                use CtfFormat::*;
+                match value {
+                    "Jeopardy" => Ok(Jeopardy),
+                    "Attack-Defense" => Ok(AttackDefense),
+                    "Hack quest" => Ok(HackQuest),
+                    "" => Ok(Unknown),
+                    _ => Err(Error::invalid_value(Unexpected::Str(value), &self)),
+                }
             }
         }
-    }
 
-    deserializer.deserialize_str(CtfFormatVisitor)
+        deserializer.deserialize_str(CtfFormatVisitor)
     }
 }
 
@@ -230,7 +237,7 @@ impl CtfFormat {
 }
 
 /// Represent a team within ctftime
-#[derive(Clone,Debug,Deserialize,Eq,PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 pub struct CtfTeam {
     id: usize,
     name: String,
@@ -244,7 +251,8 @@ impl CtfTeam {
 
 /// Deserialize a `Option<String>` type while transforming the empty string to `None`
 fn deserialize_string_empty_as_none<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
-    where D: serde::de::Deserializer<'de>
+where
+    D: serde::de::Deserializer<'de>,
 {
     struct OptionStringEmptyNone;
     impl<'de> serde::de::Visitor<'de> for OptionStringEmptyNone {
@@ -255,26 +263,29 @@ fn deserialize_string_empty_as_none<'de, D>(deserializer: D) -> Result<Option<St
         }
 
         fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where E: serde::de::Error
+        where
+            E: serde::de::Error,
         {
             match value {
                 "" => Ok(None),
-                _ => Ok(Some(value.to_string()))
+                _ => Ok(Some(value.to_string())),
             }
         }
 
         fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
-            where E: serde::de::Error
+        where
+            E: serde::de::Error,
         {
             match &*value {
                 "" => Ok(None),
-                _ => Ok(Some(value))
+                _ => Ok(Some(value)),
             }
         }
 
         // handles the `null` case
         fn visit_unit<E>(self) -> Result<Self::Value, E>
-            where E: serde::de::Error
+        where
+            E: serde::de::Error,
         {
             Ok(None)
         }
@@ -303,7 +314,10 @@ fn test_deserialize_ctf_event() {
     assert_eq!(event.location, Some("Grenoble, France".to_string()));
     assert_eq!(event.live_feed, None);
     assert_eq!(event.public_votable, false);
-    assert_eq!(event.logo_url, Some("https://ctftime.org/media/events/2016_ctftime.png".to_string()));
+    assert_eq!(
+        event.logo_url,
+        Some("https://ctftime.org/media/events/2016_ctftime.png".to_string())
+    );
     assert_eq!(event.id, 426);
     assert_eq!(event.ctf_id, 42);
 }

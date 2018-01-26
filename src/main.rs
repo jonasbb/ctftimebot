@@ -5,19 +5,23 @@ extern crate serde_json;
 extern crate slack_hook;
 
 use chrono::UTC;
-use ctftimebot::{CONFIG, CtfEvent};
-use slack_hook::{Slack, PayloadBuilder};
+use ctftimebot::{CtfEvent, CONFIG};
+use slack_hook::{PayloadBuilder, Slack};
 use std::io::Read;
 
 fn main() {
     let today = UTC::now().timestamp();
     let end = today + 100 * (3600 * 24);
-    let url = format!("https://ctftime.org/api/v1/events/?limit=100&start={}&finish={}", today, end);
+    let url = format!(
+        "https://ctftime.org/api/v1/events/?limit=100&start={}&finish={}",
+        today, end
+    );
     let mut resp = reqwest::get(&url).unwrap();
     let mut data = String::new();
     resp.read_to_string(&mut data).unwrap();
     let events: Vec<CtfEvent> = serde_json::from_str(&data).unwrap();
-    let events: Vec<_> = events.into_iter()
+    let events: Vec<_> = events
+        .into_iter()
         .filter(|x| x.should_print_event())
         .map(|x| x.to_slack())
         .collect();
@@ -45,4 +49,3 @@ fn main() {
         println!("ERR: {:?}", x)
     }
 }
-
