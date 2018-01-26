@@ -9,7 +9,7 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate slack_hook;
 
-use chrono::{DateTime, Duration, FixedOffset, Local, Offset, UTC};
+use chrono::{DateTime, Duration, FixedOffset, Local, Offset, Utc};
 use slack_hook::{Attachment, AttachmentBuilder};
 
 const BASE_URL: &str = "https://ctftime.org";
@@ -167,7 +167,7 @@ impl CtfEvent {
             return false;
         }
         let days_into_future = (self.start_date
-            .signed_duration_since(UTC::now().with_timezone(&UTC.fix())))
+            .signed_duration_since(Utc::now().with_timezone(&Utc.fix())))
             .num_days();
         !self.onsite && days_into_future <= CONFIG.days_into_future
     }

@@ -4,13 +4,13 @@ extern crate reqwest;
 extern crate serde_json;
 extern crate slack_hook;
 
-use chrono::UTC;
+use chrono::Utc;
 use ctftimebot::{CtfEvent, CONFIG};
 use slack_hook::{PayloadBuilder, Slack};
 use std::io::Read;
 
 fn main() {
-    let today = UTC::now().timestamp();
+    let today = Utc::now().timestamp();
     let end = today + 100 * (3600 * 24);
     let url = format!(
         "https://ctftime.org/api/v1/events/?limit=100&start={}&finish={}",
