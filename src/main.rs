@@ -1,5 +1,8 @@
 extern crate chrono;
 extern crate ctftimebot;
+extern crate env_logger;
+#[macro_use]
+extern crate log;
 extern crate reqwest;
 extern crate serde_json;
 extern crate slack_hook;
@@ -10,6 +13,8 @@ use slack_hook::{PayloadBuilder, Slack};
 use std::io::Read;
 
 fn main() {
+    env_logger::init();
+
     let today = Utc::now().timestamp();
     let end = today + 100 * (3600 * 24);
     let url = format!(
@@ -26,9 +31,11 @@ fn main() {
         .map(|x| x.to_slack())
         .collect();
     if events.len() == 0 {
+        info!("No CTFs in the specified time frame. Exiting...");
         // early exit in case there is no upcoming CTF
         return;
     }
+    info!("Found {} events in the specified time frame.", events.len());
 
     let slack = Slack::new(CONFIG.webhook_url.as_ref()).unwrap();
     let mut p = PayloadBuilder::new()
@@ -46,6 +53,6 @@ fn main() {
 
     let res = slack.send(&p);
     if let Err(x) = res {
-        println!("ERR: {:?}", x)
+        error!("ERR: {:?}", x)
     }
 }
