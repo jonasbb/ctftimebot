@@ -30,7 +30,7 @@ fn main() {
         .filter(|x| x.should_print_event())
         .map(|x| x.to_slack())
         .collect();
-    if events.len() == 0 {
+    if events.is_empty() {
         info!("No CTFs in the specified time frame. Exiting...");
         // early exit in case there is no upcoming CTF
         return;

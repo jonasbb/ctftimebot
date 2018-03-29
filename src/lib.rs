@@ -179,7 +179,8 @@ pub enum CtfRestrictions {
     Prequalified,
     Academic,
     Invited,
-    #[serde(rename = "High-school")] HighSchool,
+    #[serde(rename = "High-school")]
+    HighSchool,
 }
 
 /// What type of CTF, e.g. `AttackDefense`
