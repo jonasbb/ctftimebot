@@ -291,7 +291,7 @@ where
         }
     }
 
-    deserializer.deserialize_string(OptionStringEmptyNone)
+    deserializer.deserialize_any(OptionStringEmptyNone)
 }
 
 #[test]
