@@ -10,7 +10,7 @@ doc = false
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
 dotenv = "0.13"
-envy = "0.3.1"
+envy = "0.3.3"
 env_logger = "0.5"
 lazy_static = "1.0"
 log = "0.4"
