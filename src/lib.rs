@@ -1,15 +1,16 @@
 extern crate chrono;
 extern crate dotenv;
 extern crate envy;
-#[macro_use]
 extern crate lazy_static;
 extern crate serde;
-#[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate serde_with;
 extern crate slack_hook;
 
 use chrono::{DateTime, Duration, FixedOffset, Local, Offset, Utc};
+use lazy_static::lazy_static;
+use serde_derive::Deserialize;
 use slack_hook::{Attachment, AttachmentBuilder};
 
 const BASE_URL: &str = "https://ctftime.org";
@@ -47,10 +48,10 @@ pub struct CtfEvent {
     #[serde(rename = "finish")]
     finish_date: DateTime<FixedOffset>,
     /// URL of logo
-    #[serde(rename = "logo", deserialize_with = "deserialize_string_empty_as_none")]
+    #[serde(rename = "logo", with = "::serde_with::rust::string_empty_as_none")]
     logo_url: Option<String>,
     /// Link to the event page
-    #[serde(deserialize_with = "deserialize_string_empty_as_none")]
+    #[serde(with = "::serde_with::rust::string_empty_as_none")]
     url: Option<String>,
     /// format style of CTF, most common Jeopardy or AttackDefense
     format: CtfFormat,
@@ -59,12 +60,12 @@ pub struct CtfEvent {
     /// The weight of the event
     weight: f32,
     /// A link to the live feed of the event
-    #[serde(deserialize_with = "deserialize_string_empty_as_none")]
+    #[serde(with = "::serde_with::rust::string_empty_as_none")]
     live_feed: Option<String>,
     /// Access restrictions for this event
     restrictions: CtfRestrictions,
     /// Location of an onsite CTF. Should be set if `onsite` is true.
-    #[serde(deserialize_with = "deserialize_string_empty_as_none")]
+    #[serde(with = "::serde_with::rust::string_empty_as_none")]
     location: Option<String>,
     /// Specifies that the event is at a specific location, `location` should be set in this case
     onsite: bool,
@@ -102,10 +103,10 @@ impl CtfEvent {
         let duration = format_duration(&self.finish_date.signed_duration_since(self.start_date));
         let title = format!("{} — {}", self.title, self.format.to_string());
         let organizers = ((&self.organizers)
-            .into_iter()
+            .iter()
             .map(|x| x.to_string())
             .collect::<Vec<_>>())
-            .join(", ");
+        .join(", ");
         let url = self.url.clone().unwrap_or_else(|| self.ctftime_url.clone());
 
         let mut text = format!(
@@ -166,9 +167,10 @@ impl CtfEvent {
         {
             return false;
         }
-        let days_into_future = (self.start_date
+        let days_into_future = (self
+            .start_date
             .signed_duration_since(Utc::now().with_timezone(&Utc.fix())))
-            .num_days();
+        .num_days();
         !self.onsite && days_into_future <= CONFIG.days_into_future
     }
 }
@@ -248,51 +250,6 @@ impl CtfTeam {
     pub fn to_string(&self) -> String {
         format!("[{}]({}/team/{})", self.name, BASE_URL, self.id)
     }
-}
-
-/// Deserialize a `Option<String>` type while transforming the empty string to `None`
-fn deserialize_string_empty_as_none<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
-where
-    D: serde::de::Deserializer<'de>,
-{
-    struct OptionStringEmptyNone;
-    impl<'de> serde::de::Visitor<'de> for OptionStringEmptyNone {
-        type Value = Option<String>;
-
-        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-            formatter.write_str("any string")
-        }
-
-        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-        where
-            E: serde::de::Error,
-        {
-            match value {
-                "" => Ok(None),
-                _ => Ok(Some(value.to_string())),
-            }
-        }
-
-        fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
-        where
-            E: serde::de::Error,
-        {
-            match &*value {
-                "" => Ok(None),
-                _ => Ok(Some(value)),
-            }
-        }
-
-        // handles the `null` case
-        fn visit_unit<E>(self) -> Result<Self::Value, E>
-        where
-            E: serde::de::Error,
-        {
-            Ok(None)
-        }
-    }
-
-    deserializer.deserialize_any(OptionStringEmptyNone)
 }
 
 #[test]

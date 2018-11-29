@@ -1,7 +1,6 @@
 extern crate chrono;
 extern crate ctftimebot;
 extern crate env_logger;
-#[macro_use]
 extern crate log;
 extern crate reqwest;
 extern crate serde_json;
@@ -9,6 +8,7 @@ extern crate slack_hook;
 
 use chrono::Utc;
 use ctftimebot::{CtfEvent, CONFIG};
+use log::{error, info};
 use slack_hook::{PayloadBuilder, Slack};
 use std::io::Read;
 
