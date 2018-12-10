@@ -2,16 +2,21 @@ extern crate chrono;
 extern crate dotenv;
 extern crate envy;
 extern crate lazy_static;
+extern crate reqwest;
 extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate serde_with;
 extern crate slack_hook;
+extern crate unhtml;
+#[macro_use]
+extern crate unhtml_derive;
 
 use chrono::{DateTime, Duration, FixedOffset, Local, Offset, Utc};
 use lazy_static::lazy_static;
 use serde_derive::Deserialize;
 use slack_hook::{Attachment, AttachmentBuilder};
+use unhtml::FromHtml;
 
 const BASE_URL: &str = "https://ctftime.org";
 
@@ -111,12 +116,17 @@ impl CtfEvent {
 
         let mut text = format!(
             r#"**Date:** {} for {}
-**Organizers:** {}
+{}**Organizers:** {}
 [{url:}]({url:})
 
 "#,
             self.start_date.with_timezone(&Local).format("%A, %F %R"),
             duration,
+            if let Some(rating) = self.rating_weight() {
+                format!("**Rating**: {}\n", rating)
+            } else {
+                "".to_string()
+            },
             organizers,
             url = url
         );
@@ -172,6 +182,25 @@ impl CtfEvent {
             .signed_duration_since(Utc::now().with_timezone(&Utc.fix())))
         .num_days();
         !self.onsite && days_into_future <= CONFIG.days_into_future
+    }
+
+    pub fn rating_weight(&self) -> Option<u32> {
+        #[derive(FromHtml)]
+        struct RatingWeight {
+            #[html(selector = ".span10 > p:nth-child(8)", attr = "inner")]
+            name: String,
+        };
+
+        let weight =
+            RatingWeight::from_html(&reqwest::get(&self.ctftime_url).ok()?.text().ok()?).ok()?;
+        weight
+            .name
+            .split(": ")
+            .nth(1)?
+            .split('.')
+            .nth(0)?
+            .parse()
+            .ok()
     }
 }
 
@@ -262,6 +291,7 @@ fn test_deserialize_ctf_event() {
 
     let event = res.iter().last().unwrap();
     assert_eq!(event.onsite, true);
+    #[allow(clippy::float_cmp)]
     assert_eq!(event.weight, 0.0);
     assert_eq!(event.title, "GreHack CTF 2017");
     assert_eq!(event.url, Some("https://www.grehack.fr/".to_string()));
@@ -278,4 +308,22 @@ fn test_deserialize_ctf_event() {
     );
     assert_eq!(event.id, 426);
     assert_eq!(event.ctf_id, 42);
+}
+
+#[test]
+fn test_deserialize_ctf_event_rating_weight() {
+    use std::fs::File;
+    let json = File::open("./tests/ctfs-2.json").unwrap();
+
+    let res: Vec<CtfEvent> = serde_json::from_reader(json).unwrap();
+    assert_eq!(res.len(), 2);
+
+    // Test first
+    let event = &res[0];
+    assert_eq!(event.ctftime_url, "https://ctftime.org/event/680/");
+    assert_eq!(event.rating_weight(), Some(25));
+    // Test second
+    let event = &res[1];
+    assert_eq!(event.ctftime_url, "https://ctftime.org/event/724/");
+    assert_eq!(event.rating_weight(), Some(0));
 }
