@@ -2,21 +2,19 @@ extern crate chrono;
 extern crate dotenv;
 extern crate envy;
 extern crate lazy_static;
+extern crate regex;
 extern crate reqwest;
 extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate serde_with;
 extern crate slack_hook;
-extern crate unhtml;
-#[macro_use]
-extern crate unhtml_derive;
 
 use chrono::{DateTime, Duration, FixedOffset, Local, Offset, Utc};
 use lazy_static::lazy_static;
+use regex::Regex;
 use serde_derive::Deserialize;
 use slack_hook::{Attachment, AttachmentBuilder};
-use unhtml::FromHtml;
 
 const BASE_URL: &str = "https://ctftime.org";
 
@@ -36,6 +34,8 @@ lazy_static! {
         dotenv::dotenv().expect("Failed to read .env file");
         envy::from_env::<Config>().expect("Couldn't read config")
     };
+    pub static ref RE_RATING_WEIGHT: Regex =
+        Regex::new(r"Rating weight:\s*(?P<weight>\d+)").unwrap();
 }
 
 #[derive(Debug, Deserialize)]
@@ -185,23 +185,30 @@ impl CtfEvent {
     }
 
     pub fn rating_weight(&self) -> Option<u32> {
-        #[derive(FromHtml)]
-        struct RatingWeight {
-            #[html(selector = ".span10 > p:nth-child(8)", attr = "inner")]
-            name: String,
-        };
-
-        let weight =
-            RatingWeight::from_html(&reqwest::get(&self.ctftime_url).ok()?.text().ok()?).ok()?;
-        weight
-            .name
-            .split(": ")
-            .nth(1)?
-            .split('.')
-            .nth(0)?
-            .parse()
-            .ok()
+        rating_weight_from_url(&self.ctftime_url)
     }
+}
+
+fn rating_weight_from_url(url: &str) -> Option<u32> {
+    let html = &reqwest::get(url).ok()?.text().ok()?;
+    let captures = RE_RATING_WEIGHT.captures(&html)?;
+    captures.name("weight")?.as_str().parse::<u32>().ok()
+}
+
+#[test]
+fn test_rating_weight_from_url() {
+    assert_eq!(
+        rating_weight_from_url("https://ctftime.org/event/680/"),
+        Some(25)
+    );
+    assert_eq!(
+        rating_weight_from_url("https://ctftime.org/event/708"),
+        Some(13)
+    );
+    assert_eq!(
+        rating_weight_from_url("https://ctftime.org/event/620"),
+        Some(58)
+    );
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]

@@ -14,18 +14,13 @@ env_logger = "0.6"
 envy = "0.3.3"
 lazy_static = "1.2"
 log = "0.4"
+regex = "1.1.0"
 reqwest = "0.9.4"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 serde_with = "0.2.5"
 slack-hook = "0.8"
-unhtml = "0.1.2"
-unhtml_derive = "0.2.2"
-
-# [dependencies.derive_builder]
-# version = "0.4"
-# features = ["private_fields"]
 
 [profile.release]
 lto = true
