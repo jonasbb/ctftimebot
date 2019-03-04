@@ -1,0 +1,46 @@
+language: rust
+sudo: true
+
+notifications:
+  email: false
+
+# https://github.com/bors-ng/bors-ng/issues/441#issuecomment-410467524
+branches:
+  only:
+    # Enable building pull requests.
+    - master
+
+matrix:
+  include:
+    - name: "stable"
+      if: branch = master OR type = cron OR type = api
+      rust: stable
+    - name: "beta"
+      if: branch = master OR type = cron OR type = api
+      rust: beta
+    - name: "nightly"
+      if: branch = master OR type = cron OR type = api
+      rust: nightly
+
+# https://levans.fr/rust_travis_cache.html
+# Need to cache the whole `.cargo` directory to keep .crates.toml for
+# cargo-update to work
+cache:
+  directories:
+    - /home/travis/.cargo
+
+# But don't cache the cargo registry
+before_cache:
+  - rm -rf /home/travis/.cargo/registry
+
+before_script:
+  # Allow this step to fail in case clippy is not available for whatever reason
+  - ( rustup component add clippy-preview || true )
+
+script:
+  - set -e
+  - cargo build --verbose --all
+  # skip this step if clippy is not available, e.g., bad nightly
+  # `|| true` to make the command always succeed, because the `set -e` would fail otherwise
+  - ( which cargo-clippy >/dev/null 2>&1 && cargo clippy --verbose --all ) || true
+  - cargo test --verbose --all
