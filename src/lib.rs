@@ -198,10 +198,6 @@ fn rating_weight_from_url(url: &str) -> Option<u32> {
 #[test]
 fn test_rating_weight_from_url() {
     assert_eq!(
-        rating_weight_from_url("https://ctftime.org/event/680/"),
-        Some(25)
-    );
-    assert_eq!(
         rating_weight_from_url("https://ctftime.org/event/708"),
         Some(13)
     );
@@ -288,6 +284,7 @@ impl CtfTeam {
     }
 }
 
+#[allow(clippy::float_cmp)]
 #[test]
 fn test_deserialize_ctf_event() {
     use std::fs::File;
@@ -298,7 +295,6 @@ fn test_deserialize_ctf_event() {
 
     let event = res.iter().last().unwrap();
     assert_eq!(event.onsite, true);
-    #[allow(clippy::float_cmp)]
     assert_eq!(event.weight, 0.0);
     assert_eq!(event.title, "GreHack CTF 2017");
     assert_eq!(event.url, Some("https://www.grehack.fr/".to_string()));
@@ -320,17 +316,13 @@ fn test_deserialize_ctf_event() {
 #[test]
 fn test_deserialize_ctf_event_rating_weight() {
     use std::fs::File;
-    let json = File::open("./tests/ctfs-2.json").unwrap();
+    let json = File::open("./tests/ctfs-1.json").unwrap();
 
     let res: Vec<CtfEvent> = serde_json::from_reader(json).unwrap();
-    assert_eq!(res.len(), 2);
+    assert_eq!(res.len(), 1);
 
     // Test first
     let event = &res[0];
-    assert_eq!(event.ctftime_url, "https://ctftime.org/event/680/");
-    assert_eq!(event.rating_weight(), Some(25));
-    // Test second
-    let event = &res[1];
     assert_eq!(event.ctftime_url, "https://ctftime.org/event/724/");
-    assert_eq!(event.rating_weight(), Some(0));
+    assert_eq!(event.rating_weight(), Some(24));
 }

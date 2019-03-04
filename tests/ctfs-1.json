@@ -2,37 +2,6 @@
     {
         "organizers": [
             {
-                "id": 6514,
-                "name": "Pic0wn"
-            }
-        ],
-        "onsite": true,
-        "finish": "2018-12-15T02:00:00+00:00",
-        "description": "Ph0wn is a local CTF dedicated to smart devices (e.g drones, connected toothbrush, weather station etc).\r\n\r\nThis CTF is not online: you need to be physically present to borrow some of the connected objects for instance.\r\n\r\nThe event is sponsored by Fortinet. Other sponsors to be announced.",
-        "weight": 0.00,
-        "title": "ph0wn CTF 2018",
-        "url": "https://ph0wn.org/",
-        "is_votable_now": false,
-        "restrictions": "Open",
-        "format": "Jeopardy",
-        "start": "2018-12-14T18:00:00+00:00",
-        "participants": 5,
-        "ctftime_url": "https://ctftime.org/event/680/",
-        "location": "Sophia Antipolis, France",
-        "live_feed": "",
-        "public_votable": false,
-        "duration": {
-            "hours": 8,
-            "days": 0
-        },
-        "logo": "https://ctftime.org/media/events/logo-ph0wn_1.png",
-        "format_id": 1,
-        "id": 680,
-        "ctf_id": 220
-    },
-    {
-        "organizers": [
-            {
                 "id": 58218,
                 "name": "Hec\u0103rii, \u021auica \u0219i P\u0103unii"
             }
