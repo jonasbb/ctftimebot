@@ -15,9 +15,6 @@ matrix:
     - name: "stable"
       if: branch = master OR type = cron OR type = api
       rust: stable
-    - name: "beta"
-      if: branch = master OR type = cron OR type = api
-      rust: beta
     - name: "nightly"
       if: branch = master OR type = cron OR type = api
       rust: nightly
