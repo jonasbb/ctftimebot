@@ -197,6 +197,14 @@ fn test_rating_weight_from_url() {
         rating_weight_from_url("https://ctftime.org/event/620"),
         Some(58)
     );
+    assert_eq!(
+        rating_weight_from_url("https://ctftime.org/event/747"),
+        Some(35)
+    );
+    assert_eq!(
+        rating_weight_from_url("https://ctftime.org/event/771"),
+        Some(19)
+    );
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
