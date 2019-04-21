@@ -1,18 +1,10 @@
-extern crate chrono;
-extern crate dotenv;
-extern crate envy;
-extern crate lazy_static;
-extern crate regex;
-extern crate reqwest;
-extern crate serde;
-extern crate serde_derive;
-extern crate serde_json;
-extern crate serde_with;
-extern crate slack_hook;
-
 use chrono::{DateTime, Duration, FixedOffset, Local, Offset, Utc};
+use dotenv;
+use envy;
 use lazy_static::lazy_static;
 use regex::Regex;
+use reqwest;
+use serde;
 use serde_derive::Deserialize;
 use slack_hook::{Attachment, AttachmentBuilder};
 
@@ -109,7 +101,7 @@ impl CtfEvent {
         let title = format!("{} — {}", self.title, self.format.to_string());
         let organizers = ((&self.organizers)
             .iter()
-            .map(|x| x.to_string())
+            .map(CtfTeam::to_string)
             .collect::<Vec<_>>())
         .join(", ");
         let url = self.url.clone().unwrap_or_else(|| self.ctftime_url.clone());
@@ -237,7 +229,7 @@ impl<'de> serde::de::Deserialize<'de> for CtfFormat {
         impl<'de> serde::de::Visitor<'de> for CtfFormatVisitor {
             type Value = CtfFormat;
 
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 formatter.write_str("one of `Jeopardy`, `Attack-Defense`, `Hack quest`, ``")
             }
 
@@ -245,7 +237,7 @@ impl<'de> serde::de::Deserialize<'de> for CtfFormat {
             where
                 E: serde::de::Error,
             {
-                use CtfFormat::*;
+                use crate::CtfFormat::*;
                 match value {
                     "Jeopardy" => Ok(Jeopardy),
                     "Attack-Defense" => Ok(AttackDefense),

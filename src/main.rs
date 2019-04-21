@@ -1,14 +1,9 @@
-extern crate chrono;
-extern crate ctftimebot;
-extern crate env_logger;
-extern crate log;
-extern crate reqwest;
-extern crate serde_json;
-extern crate slack_hook;
-
 use chrono::Utc;
 use ctftimebot::{CtfEvent, CONFIG};
+use env_logger;
 use log::{error, info};
+use reqwest;
+use serde_json;
 use slack_hook::{PayloadBuilder, Slack};
 use std::io::Read;
 
@@ -27,7 +22,7 @@ fn main() {
     let events: Vec<CtfEvent> = serde_json::from_str(&data).unwrap();
     let events: Vec<_> = events
         .into_iter()
-        .filter(|x| x.should_print_event())
+        .filter(CtfEvent::should_print_event)
         .map(|x| x.to_slack())
         .collect();
     if events.is_empty() {
