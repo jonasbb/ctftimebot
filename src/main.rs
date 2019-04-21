@@ -35,7 +35,7 @@ fn main() {
     let slack = Slack::new(CONFIG.webhook_url.as_ref()).unwrap();
     let mut p = PayloadBuilder::new()
         .username("Upcoming CTFs")
-        .text("[Upcoming CTFs](https://ctftime.org/event/oldlist/upcoming)")
+        .text("[Upcoming CTFs](https://ctftime.org/event/list/upcoming)")
         .attachments(events);
     if let Some(ref c) = CONFIG.mattermost_channel {
         p = p.channel(c.to_string());
