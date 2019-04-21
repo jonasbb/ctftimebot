@@ -142,6 +142,7 @@ impl CtfEvent {
 
         let mut builder = AttachmentBuilder::new(fallback)
             .title(title)
+            .title_link(&*self.ctftime_url)
             .text(text.trim().to_string())
             .color(if self.format == CtfFormat::AttackDefense {
                 CONFIG.color_attack_defense.clone()
