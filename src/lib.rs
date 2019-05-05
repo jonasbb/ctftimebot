@@ -204,7 +204,7 @@ fn test_rating_weight_from_url() {
     );
     assert_eq!(
         rating_weight_from_url("https://ctftime.org/event/771"),
-        Some(19)
+        Some(18)
     );
 }
 
