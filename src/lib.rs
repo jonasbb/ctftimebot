@@ -195,8 +195,12 @@ fn test_rating_weight_from_url() {
         Some(13)
     );
     assert_eq!(
-        rating_weight_from_url("https://ctftime.org/event/620"),
-        Some(58)
+        rating_weight_from_url("https://ctftime.org/event/228"),
+        Some(60)
+    );
+    assert_eq!(
+        rating_weight_from_url("https://ctftime.org/event/342"),
+        Some(55)
     );
     assert_eq!(
         rating_weight_from_url("https://ctftime.org/event/747"),
