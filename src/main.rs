@@ -1,9 +1,6 @@
 use chrono::Utc;
 use ctftimebot::{CtfEvent, CONFIG};
-use env_logger;
 use log::{error, info};
-use reqwest;
-use serde_json;
 use slack_hook::{PayloadBuilder, Slack};
 use std::io::Read;
 
@@ -16,7 +13,7 @@ fn main() {
         "https://ctftime.org/api/v1/events/?limit=100&start={}&finish={}",
         today, end
     );
-    let mut resp = reqwest::get(&url).unwrap();
+    let mut resp = reqwest::blocking::get(&url).unwrap();
     let mut data = String::new();
     resp.read_to_string(&mut data).unwrap();
     let events: Vec<CtfEvent> = serde_json::from_str(&data).unwrap();

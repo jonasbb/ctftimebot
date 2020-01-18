@@ -1,10 +1,6 @@
 use chrono::{DateTime, Duration, FixedOffset, Local, Offset, Utc};
-use dotenv;
-use envy;
 use lazy_static::lazy_static;
 use regex::Regex;
-use reqwest;
-use serde;
 use serde_derive::Deserialize;
 use slack_hook::{Attachment, AttachmentBuilder};
 
@@ -183,7 +179,7 @@ impl CtfEvent {
 }
 
 fn rating_weight_from_url(url: &str) -> Option<u32> {
-    let html = &reqwest::get(url).ok()?.text().ok()?;
+    let html = &reqwest::blocking::get(url).ok()?.text().ok()?;
     let captures = RE_RATING_WEIGHT.captures(&html)?;
     captures.name("weight")?.as_str().parse::<u32>().ok()
 }
