@@ -6,7 +6,7 @@ use slack_hook::{Attachment, AttachmentBuilder};
 
 const BASE_URL: &str = "https://ctftime.org";
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Eq, PartialEq)]
 pub struct Config {
     pub webhook_url: String,
     pub days_into_future: i64,
@@ -15,6 +15,22 @@ pub struct Config {
     pub bot_icon: Option<String>,
     pub always_show_ctfs: Vec<usize>,
     pub mattermost_channel: Option<String>,
+}
+
+#[test]
+fn test_load_config() {
+    dotenv::dotenv().expect("Failed to read .env file");
+    let config = envy::from_env::<Config>().expect("Couldn't read config");
+    let expected = Config {
+        webhook_url: "".to_string(),
+        days_into_future: 21,
+        color_jeopardy: "#0099e1".to_string(),
+        color_attack_defense: "#da5422".to_string(),
+        bot_icon: Some("https://ctftime.org/static/images/ctftime-logo-avatar.png".to_string()),
+        always_show_ctfs: vec![6, 7, 24, 412],
+        mattermost_channel: None,
+    };
+    assert_eq!(config, expected)
 }
 
 lazy_static! {
