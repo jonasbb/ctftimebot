@@ -113,7 +113,7 @@ impl CtfEvent {
         let title = format!("{} — {}", self.title, self.format.to_string());
         let organizers = ((&self.organizers)
             .iter()
-            .map(CtfTeam::to_string)
+            .map(CtfTeam::to_markdown_link)
             .collect::<Vec<_>>())
         .join(", ");
         let url = self.url.clone().unwrap_or_else(|| self.ctftime_url.clone());
@@ -190,34 +190,8 @@ impl CtfEvent {
     }
 
     pub fn rating_weight(&self) -> Option<u32> {
-        rating_weight_from_url(&self.ctftime_url)
+        Some(self.weight.floor() as u32)
     }
-}
-
-fn rating_weight_from_url(url: &str) -> Option<u32> {
-    let html = &reqwest::blocking::get(url).ok()?.text().ok()?;
-    let captures = RE_RATING_WEIGHT.captures(&html)?;
-    captures.name("weight")?.as_str().parse::<u32>().ok()
-}
-
-#[test]
-fn test_rating_weight_from_url() {
-    assert_eq!(
-        rating_weight_from_url("https://ctftime.org/event/708"),
-        Some(13)
-    );
-    assert_eq!(
-        rating_weight_from_url("https://ctftime.org/event/228"),
-        Some(60)
-    );
-    assert_eq!(
-        rating_weight_from_url("https://ctftime.org/event/342"),
-        Some(54)
-    );
-    assert_eq!(
-        rating_weight_from_url("https://ctftime.org/event/747"),
-        Some(35)
-    );
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
@@ -292,7 +266,7 @@ pub struct CtfTeam {
 }
 
 impl CtfTeam {
-    pub fn to_string(&self) -> String {
+    pub fn to_markdown_link(&self) -> String {
         format!("[{}]({}/team/{})", self.name, BASE_URL, self.id)
     }
 }
@@ -306,24 +280,54 @@ fn test_deserialize_ctf_event() {
     let res: Vec<CtfEvent> = serde_json::from_reader(json).unwrap();
     assert_eq!(res.len(), 442);
 
-    let event = res.iter().last().unwrap();
-    assert_eq!(event.onsite, true);
-    assert_eq!(event.weight, 0.0);
-    assert_eq!(event.title, "GreHack CTF 2017");
-    assert_eq!(event.url, Some("https://www.grehack.fr/".to_string()));
+    let event = &res[440];
+    assert_eq!(event.onsite, false);
+    assert_eq!(event.weight, 25.0);
+    assert_eq!(event.rating_weight(), Some(25));
+    assert_eq!(event.title, "RHme3 - Qualifiers");
+    assert_eq!(event.url, Some("https://rhme.riscure.com/3/".to_string()));
     assert_eq!(event.restrictions, CtfRestrictions::Open);
     assert_eq!(event.format, CtfFormat::Jeopardy);
-    assert_eq!(event.participants, 20);
-    assert_eq!(event.ctftime_url, "https://ctftime.org/event/426/");
-    assert_eq!(event.location, Some("Grenoble, France".to_string()));
+    assert_eq!(event.participants, 0);
+    assert_eq!(event.ctftime_url, "https://ctftime.org/event/501/");
+    assert_eq!(event.location, None);
+    assert_eq!(
+        event.live_feed,
+        Some("https://ctftime.org/live/501/".to_string())
+    );
+    assert_eq!(event.public_votable, true);
+    assert_eq!(
+        event.logo_url,
+        Some("https://ctftime.org//media/events/RHME3_logo_Box.png".to_string())
+    );
+    assert_eq!(event.id, 501);
+    assert_eq!(event.ctf_id, 209);
+
+    let event = &res[441];
+    assert_eq!(event.onsite, true);
+    assert_eq!(event.weight, 0.0);
+    assert_eq!(event.rating_weight(), Some(0));
+    assert_eq!(
+        event.title,
+        "Hardwear.io - Hardware Security Conference and Training"
+    );
+    assert_eq!(event.url, Some("http://hardwear.io/".to_string()));
+    assert_eq!(event.restrictions, CtfRestrictions::Open);
+    assert_eq!(event.format, CtfFormat::AttackDefense);
+    assert_eq!(event.participants, 4);
+    assert_eq!(event.ctftime_url, "https://ctftime.org/event/514/");
+    assert_eq!(
+        event.location,
+        Some("NH Hotel, The Hague, Netherlands".to_string())
+    );
     assert_eq!(event.live_feed, None);
     assert_eq!(event.public_votable, false);
     assert_eq!(
         event.logo_url,
-        Some("https://ctftime.org/media/events/2016_ctftime.png".to_string())
+        Some("https://ctftime.org//media/events/hardwear_500Dpi_-_Copy.jpg".to_string())
     );
-    assert_eq!(event.id, 426);
-    assert_eq!(event.ctf_id, 42);
+    assert_eq!(event.id, 514);
+    assert_eq!(event.ctf_id, 216);
 }
 
 #[test]
