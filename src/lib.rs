@@ -27,7 +27,7 @@ fn test_load_config() {
         color_jeopardy: "#0099e1".to_string(),
         color_attack_defense: "#da5422".to_string(),
         bot_icon: Some("https://ctftime.org/static/images/ctftime-logo-avatar.png".to_string()),
-        always_show_ctfs: vec![6, 7, 24, 412],
+        always_show_ctfs: vec![6, 7, 24, 117, 412],
         mattermost_channel: None,
     };
     assert_eq!(config, expected)
