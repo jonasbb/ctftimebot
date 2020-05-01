@@ -171,7 +171,7 @@ impl CtfEvent {
 
     /// Determines if this event should be printed
     ///
-    /// Reasons to exclude it are it is too far in the future or it is not availble online.
+    /// Reasons to exclude it are it is too far in the future or it is not available online.
     pub fn should_print_event(&self) -> bool {
         if CONFIG.always_show_ctfs.contains(&self.ctf_id) {
             return true;

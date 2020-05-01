@@ -1,0 +1,21 @@
+{
+    "cSpell.words": [
+        "CODECOV",
+        "CTFs",
+        "Enowars",
+        "Prequalified",
+        "chrono",
+        "clippy",
+        "codecov",
+        "ctftime",
+        "ctftimebot",
+        "dotenv",
+        "mattermost",
+        "toolchain",
+        "webhook"
+    ],
+    "cSpell.enableFiletypes": [
+        "dotenv",
+        "toml"
+    ]
+}
