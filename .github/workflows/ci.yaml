@@ -1,0 +1,102 @@
+on: push
+name: Rust CI
+
+jobs:
+  clippy_check:
+    strategy:
+      matrix:
+        os: [
+          "ubuntu-latest",
+        ]
+        rust: [
+          "stable",
+          "nightly",
+        ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: clippy
+      - uses: actions-rs/clippy-check@v1
+        name: clippy "All Features" (${{ matrix.os }} / ${{ matrix.rust }})
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features -- -D warnings
+          name: clippy "All Features" (${{ matrix.os }} / ${{ matrix.rust }})
+
+  rustfmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: rustfmt
+      - uses: actions-rs/cargo@v1
+        name: Rustfmt Check (${{ matrix.rust }})
+        with:
+          command: fmt
+          args: --all -- --check
+
+  build_and_test:
+    name: Build and Test
+    needs: [
+      "rustfmt",
+      "clippy_check",
+    ]
+    strategy:
+      matrix:
+        os: [
+          "ubuntu-latest",
+        ]
+        rust: [
+          "stable",
+          "nightly",
+        ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      # Build and test
+      - uses: actions-rs/cargo@v1
+        name: Build (${{ matrix.os }} / ${{ matrix.rust }})
+        with:
+          command: build
+          args: --all-features
+      - uses: actions-rs/cargo@v1
+        name: Test "All Features" (${{ matrix.os }} / ${{ matrix.rust }})
+        with:
+          command: test
+          args: --all-features
+
+      # Build a release version and publish it as release
+      - name: Build (${{ matrix.os }} / ${{ matrix.rust }})
+        uses: actions-rs/cargo@v1
+        if: matrix.rust == 'stable'  && matrix.os == 'ubuntu-latest'
+        with:
+          command: build
+          args: --all-features
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: matrix.rust == 'stable'  && matrix.os == 'ubuntu-latest'
+        with:
+          name: cd
+          tag_name: cd
+          files: target/release/ctftimebot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
