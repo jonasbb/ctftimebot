@@ -1,7 +1,7 @@
 name: Post in Chat
 on:
   schedule:
-    - cron: '45 * * * *'
+    - cron: '0 * * * *'
 
 jobs:
   post_in_chat:
@@ -13,5 +13,6 @@ jobs:
       - name: Post Chat
         run: ./ctftimebot
         env:
-          MATTERMOST_CHANNEL: bottest
+          DAYS_INTO_FUTURE: 3
+          MATTERMOST_CHANNEL: "@jbushart"
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
