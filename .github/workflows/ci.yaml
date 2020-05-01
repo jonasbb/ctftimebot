@@ -90,7 +90,7 @@ jobs:
         if: matrix.rust == 'stable'  && matrix.os == 'ubuntu-latest'
         with:
           command: build
-          args: --all-features
+          args: --release --all-features
       - name: Release
         uses: softprops/action-gh-release@v1
         if: matrix.rust == 'stable'  && matrix.os == 'ubuntu-latest'
