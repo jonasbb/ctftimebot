@@ -92,11 +92,8 @@ jobs:
           command: build
           args: --release --all-features
       - name: Update latest tag
-        uses: EndBug/latest-tag@latest
-        with:
-          tag-name: latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: git tag --force latest && git push --force origin refs/tags/latest
+        if: matrix.rust == 'stable'  && matrix.os == 'ubuntu-latest'
       - name: Release latest version
         uses: softprops/action-gh-release@v1
         if: matrix.rust == 'stable'  && matrix.os == 'ubuntu-latest'
