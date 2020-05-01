@@ -1,0 +1,17 @@
+name: Post in Chat
+on:
+  schedule:
+    - cron: '45 * * * *'
+
+jobs:
+  post_in_chat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Download pre-compiled binary
+        run: wget https://github.com/jonasbb/ctftimebot/releases/download/latest/ctftimebot && chmod +x ./ctftimebot
+      - name: Post Chat
+        run: ./ctftimebot
+        env:
+          MATTERMOST_CHANNEL: bottest
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
