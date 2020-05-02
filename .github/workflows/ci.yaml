@@ -95,11 +95,9 @@ jobs:
         run: git tag --force latest && git push --force origin refs/tags/latest
         if: matrix.rust == 'stable'  && matrix.os == 'ubuntu-latest'
       - name: Release latest version
-        uses: softprops/action-gh-release@v1
+        uses: ./.github/actions/github-release
         if: matrix.rust == 'stable'  && matrix.os == 'ubuntu-latest'
         with:
-          name: "Latest Version"
-          tag_name: latest
+          name: latest
           files: target/release/ctftimebot
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
