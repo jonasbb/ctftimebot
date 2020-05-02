@@ -10,7 +10,7 @@ fn main() {
     let today = Utc::now().timestamp();
     let end = today + 100 * (3600 * 24);
     let url = format!(
-        "https://ctftime.org/api/v1/events/?limit=50&start={}&finish={}",
+        "https://ctftime.org/api/v1/events/?limit=30&start={}&finish={}",
         today, end
     );
     let mut resp = reqwest::blocking::get(&url).unwrap();
