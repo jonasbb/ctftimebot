@@ -1,7 +1,7 @@
 name: Post in Chat
 on:
   schedule:
-    - cron: '0 9 * * *'
+    - cron: '0 9 * * 1'
 
 jobs:
   post_in_chat:
