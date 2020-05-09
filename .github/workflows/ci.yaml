@@ -87,16 +87,16 @@ jobs:
       # Build a release version and publish it as release
       - name: Build (${{ matrix.os }} / ${{ matrix.rust }})
         uses: actions-rs/cargo@v1
-        if: matrix.rust == 'stable'  && matrix.os == 'ubuntu-latest'
+        if: github.ref == 'refs/heads/master' && matrix.rust == 'stable'  && matrix.os == 'ubuntu-latest'
         with:
           command: build
           args: --release --all-features
       - name: Update latest tag
         run: git tag --force latest && git push --force origin refs/tags/latest
-        if: matrix.rust == 'stable'  && matrix.os == 'ubuntu-latest'
+        if: github.ref == 'refs/heads/master' && matrix.rust == 'stable'  && matrix.os == 'ubuntu-latest'
       - name: Release latest version
         uses: ./.github/actions/github-release
-        if: matrix.rust == 'stable'  && matrix.os == 'ubuntu-latest'
+        if: github.ref == 'refs/heads/master' && matrix.rust == 'stable'  && matrix.os == 'ubuntu-latest'
         with:
           name: latest
           files: target/release/ctftimebot
