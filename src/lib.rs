@@ -1,8 +1,10 @@
+pub mod mattermost_hook_api;
+
+use crate::mattermost_hook_api::Attachment;
 use chrono::{DateTime, Duration, FixedOffset, Local, Offset, Utc};
 use lazy_static::lazy_static;
 use regex::Regex;
-use serde_derive::Deserialize;
-use slack_hook::{Attachment, AttachmentBuilder};
+use serde::Deserialize;
 
 const BASE_URL: &str = "https://ctftime.org";
 
@@ -152,21 +154,22 @@ impl CtfEvent {
             url
         );
 
-        let mut builder = AttachmentBuilder::new(fallback)
-            .title(title)
-            .title_link(&*self.ctftime_url)
-            .text(text.trim().to_string())
-            .color(if self.format == CtfFormat::AttackDefense {
+        let mut attachment = Attachment {
+            fallback,
+            title: Some(title),
+            title_link: Some(self.ctftime_url.clone()),
+            text: Some(text.trim().to_string()),
+            color: Some(if self.format == CtfFormat::AttackDefense {
                 CONFIG.color_attack_defense.clone()
             } else {
                 CONFIG.color_jeopardy.clone()
-            });
-
+            }),
+            ..Default::default()
+        };
         if let Some(ref url) = self.logo_url {
-            builder = builder.thumb_url(url.as_ref());
+            attachment.thumb_url = Some(url.clone());
         }
-
-        builder.build().unwrap()
+        attachment
     }
 
     /// Determines if this event should be printed

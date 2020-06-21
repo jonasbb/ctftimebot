@@ -1,7 +1,6 @@
 use chrono::Utc;
-use ctftimebot::{CtfEvent, CONFIG};
+use ctftimebot::{mattermost_hook_api::Message, CtfEvent, CONFIG};
 use log::{error, info};
-use slack_hook::{PayloadBuilder, Slack};
 use std::io::Read;
 
 fn main() {
@@ -29,21 +28,23 @@ fn main() {
     }
     info!("Found {} events in the specified time frame.", events.len());
 
-    let slack = Slack::new(CONFIG.webhook_url.as_ref()).unwrap();
-    let mut p = PayloadBuilder::new()
-        .username("Upcoming CTFs")
-        .text("[Upcoming CTFs](https://ctftime.org/event/list/upcoming)")
-        .attachments(events);
+    let mut message = Message {
+        username: Some("Upcoming CTFs".to_string()),
+        text: Some("[Upcoming CTFs](https://ctftime.org/event/list/upcoming)".to_string()),
+        attachments: events,
+        ..Default::default()
+    };
     if let Some(ref c) = CONFIG.mattermost_channel {
-        p = p.channel(c.to_string());
+        message.channel = Some(c.to_string());
     }
-
     if let Some(ref url) = CONFIG.bot_icon {
-        p = p.icon_url(url.as_ref())
+        message.icon_url = Some(url.clone())
     }
-    let p = p.build().unwrap();
 
-    let res = slack.send(&p);
+    let res = reqwest::blocking::Client::new()
+        .post(&CONFIG.webhook_url)
+        .json(&message)
+        .send();
     if let Err(x) = res {
         error!("ERR: {:?}", x)
     }
