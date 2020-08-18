@@ -5,6 +5,7 @@ use chrono::{DateTime, Duration, FixedOffset, Local, Offset, Utc};
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::Deserialize;
+use serde_with::{serde_as, DefaultOnError, NoneAsEmptyString};
 
 const BASE_URL: &str = "https://ctftime.org";
 
@@ -44,6 +45,7 @@ lazy_static! {
         Regex::new(r"Rating weight:\s*(?P<weight>\d+)").unwrap();
 }
 
+#[serde_as]
 #[derive(Debug, Deserialize)]
 pub struct CtfEvent {
     /// Event title, this is specific to one event, e.g. "FAUST CTF 2017"
@@ -59,10 +61,11 @@ pub struct CtfEvent {
     #[serde(rename = "finish")]
     finish_date: DateTime<FixedOffset>,
     /// URL of logo
-    #[serde(rename = "logo", with = "::serde_with::rust::string_empty_as_none")]
+    #[serde_as(as = "NoneAsEmptyString")]
+    #[serde(rename = "logo")]
     logo_url: Option<String>,
     /// Link to the event page
-    #[serde(with = "::serde_with::rust::string_empty_as_none")]
+    #[serde_as(as = "NoneAsEmptyString")]
     url: Option<String>,
     /// format style of CTF, most common Jeopardy or AttackDefense
     format: CtfFormat,
@@ -71,12 +74,13 @@ pub struct CtfEvent {
     /// The weight of the event
     weight: f32,
     /// A link to the live feed of the event
-    #[serde(with = "::serde_with::rust::string_empty_as_none")]
+    #[serde_as(as = "NoneAsEmptyString")]
     live_feed: Option<String>,
     /// Access restrictions for this event
     restrictions: CtfRestrictions,
     /// Location of an onsite CTF. Should be set if `onsite` is true.
-    #[serde(with = "::serde_with::rust::string_empty_as_none")]
+    // Some of the locations are actually `null` and not `""`.
+    #[serde_as(as = "DefaultOnError<NoneAsEmptyString>")]
     location: Option<String>,
     /// Specifies that the event is at a specific location, `location` should be set in this case
     onsite: bool,

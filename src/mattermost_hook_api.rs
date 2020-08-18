@@ -2,6 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use serde_with::serde_as;
 use std::collections::HashMap;
 
 /// Incoming webhooks let you POST some data to a Mattermost endpoint to create a message in a channel.
@@ -216,7 +217,7 @@ pub struct Integration {
 /// The details are on the [`PostUpdate`] struct.
 /// An ephemeral message can be send to the user who triggered the [`Action`].
 #[serde_with::skip_serializing_none]
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize)]
 pub struct ActionResponse {
     /// Update the existing message and replace parts of it with
     pub update: Option<PostUpdate>,
@@ -238,12 +239,15 @@ pub struct ActionResponse {
 /// [Source](https://docs.mattermost.com/developer/interactive-messages.html#how-do-i-manage-properties-of-an-interactive-message)
 ///
 /// [the code]: https://github.com/mattermost/mattermost-server/blob/73ce92400b78480a8119f8cf359d594782e3c03f/model/post.go#L63
+#[serde_as]
 #[serde_with::skip_serializing_none]
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct PostUpdate {
-    #[serde(default, with = "serde_with::rust::double_option")]
+    #[serde_as(as = "Option<Option<_>>")]
+    #[serde(default)]
     pub message: Option<Option<String>>,
-    #[serde(default, with = "serde_with::rust::double_option")]
+    #[serde_as(as = "Option<Option<_>>")]
+    #[serde(default)]
     pub props: Option<Option<PostProps>>,
 }
 
