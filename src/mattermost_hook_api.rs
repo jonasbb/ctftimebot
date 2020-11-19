@@ -255,8 +255,10 @@ impl From<Message> for PostUpdate {
     fn from(msg: Message) -> Self {
         let message = msg.text.map(Some);
         let props = if !msg.attachments.is_empty() || msg.props.is_some() {
-            let mut pprops = PostProps::default();
-            pprops.attachments = msg.attachments;
+            let mut pprops = PostProps {
+                attachments: msg.attachments,
+                ..Default::default()
+            };
             if let Some(props) = msg.props {
                 pprops.card = props.card;
                 pprops.extras = props.extras;
@@ -271,12 +273,15 @@ impl From<Message> for PostUpdate {
 
 #[test]
 fn test_convert_message_to_update() {
-    let mut msg = Message::default();
-    msg.text = Some("Hello World".to_string());
+    let mut msg = Message {
+        text: Some("Hello World".to_string()),
+        ..Default::default()
+    };
     msg.attachments.push({
-        let mut att = Attachment::default();
-        att.fallback = "Hello Fallback".to_string();
-        att
+        Attachment {
+            fallback: "Hello Fallback".to_string(),
+            ..Default::default()
+        }
     });
 
     let pu: PostUpdate = msg.into();
@@ -284,8 +289,7 @@ fn test_convert_message_to_update() {
         assert_eq!(prop.attachments.len(), 1);
         assert!(prop.card.is_none());
     } else {
-        assert!(
-            false,
+        panic!(
             "PostUpdate does not follow the expected structure. It should have a PostProps value."
         );
     }
