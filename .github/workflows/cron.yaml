@@ -1,7 +1,6 @@
 name: Post in Chat
 on:
-  schedule:
-    - cron: '0 7 * * 1'
+  workflow_dispatch:
 
 jobs:
   post_in_chat:
