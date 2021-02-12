@@ -11,7 +11,7 @@ name = "ctftimebot"
 [dependencies]
 chrono = {version = "0.4.19", features = ["serde"]}
 dotenv = "0.15.0"
-env_logger = "0.8.2"
+env_logger = "0.8.3"
 envy = "0.4.2"
 lazy_static = "1.4.0"
 log = "0.4.14"
