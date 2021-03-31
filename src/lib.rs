@@ -116,7 +116,7 @@ fn format_duration(d: &Duration) -> String {
 impl CtfEvent {
     pub fn to_slack(&self) -> Attachment {
         let duration = format_duration(&self.finish_date.signed_duration_since(self.start_date));
-        let title = format!("{} — {}", self.title, self.format.to_string());
+        let title = format!("{} — {}", self.title, self.format.as_str());
         let organizers = ((&self.organizers)
             .iter()
             .map(CtfTeam::to_markdown_link)
@@ -255,7 +255,7 @@ impl<'de> serde::de::Deserialize<'de> for CtfFormat {
 }
 
 impl CtfFormat {
-    fn to_string(&self) -> &str {
+    fn as_str(&self) -> &str {
         match *self {
             CtfFormat::Jeopardy => "Jeopardy",
             CtfFormat::AttackDefense => "Attack-Defense",
